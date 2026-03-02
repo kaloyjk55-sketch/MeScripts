@@ -1,3 +1,6 @@
+-- [[ THĐ NANO V12 - GENESIS EDITION ]] --
+-- [[ FILE: Tdv12.lua | ENGINE: TD FLY V36 ]] --
+
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
@@ -6,7 +9,7 @@ local UserInputService = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 local camera = workspace.CurrentCamera
 
--- HỆ THỐNG QUẢN LÝ
+-- HỆ THỐNG QUẢN LÝ TÀI NGUYÊN
 local V12 = { Conns = {}, Objs = {}, ESP_List = {} }
 function V12:Clear()
     for _, c in pairs(self.Conns) do c:Disconnect() end
@@ -16,7 +19,7 @@ end
 
 local State = { Fly = false, Aimbot = false, ESP = false, Noclip = false, Speed = 16 }
 
--- ===== GUI GỐC CỦA BRO (FIXED) =====
+-- ===== GIAO DIỆN (UI) =====
 local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
 gui.Name = "TD_V12_Genesis"; gui.ResetOnSpawn = false
 table.insert(V12.Objs, gui)
@@ -24,7 +27,7 @@ table.insert(V12.Objs, gui)
 local blur = Instance.new("BlurEffect", Lighting)
 blur.Name = "V12_Blur"; blur.Size = 0
 
--- LOGO BUTTON
+-- LOGO TD (NÚT BẤM CỦA BRO)
 local logo = Instance.new("TextButton", gui)
 logo.Size = UDim2.new(0,60,0,60)
 logo.Position = UDim2.new(0,20,0.5,-30)
@@ -60,7 +63,7 @@ container.Size = UDim2.new(1, -20, 1, -70); container.Position = UDim2.new(0, 10
 container.BackgroundTransparency = 1; container.ScrollBarThickness = 0
 Instance.new("UIListLayout", container).Padding = UDim.new(0, 10)
 
--- ===== HÀM THÊM NÚT BẬT/TẮT =====
+-- HÀM THÊM NÚT BẬT/TẮT
 local function AddToggle(name, stateKey, cb)
     local btn = Instance.new("TextButton", container)
     btn.Size = UDim2.new(0.95, 0, 0, 40)
@@ -77,7 +80,7 @@ local function AddToggle(name, stateKey, cb)
     end)
 end
 
--- MODULES TD
+-- MODULES CHỨC NĂNG
 AddToggle("TD FLY V36", "Fly", function(on)
     local r = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
     if on and r then
@@ -91,14 +94,14 @@ end)
 AddToggle("AIMBOT HEAD", "Aimbot", function() end)
 AddToggle("SPEED HACK (100)", "Speed", function(on) State.Speed = on and 100 or 16 end)
 
--- ===== LOGIC KÉO THẢ & CLICK (QUAN TRỌNG NHẤT) =====
+-- ===== LOGIC KÉO THẢ & CLICK (FIXED) =====
 local dragStart, startPos, dragging = nil, nil, false
-local moved = false -- Biến kiểm tra xem có đang di chuyển logo không
+local startTime = 0
 
 logo.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         dragging = true
-        moved = false
+        startTime = tick()
         dragStart = input.Position
         startPos = logo.Position
     end
@@ -107,11 +110,41 @@ end)
 UserInputService.InputChanged:Connect(function(input)
     if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
         local delta = input.Position - dragStart
-        if delta.Magnitude > 5 then -- Nếu di chuyển quá 5 pixel thì tính là KÉO
-            moved = true
-            logo.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        logo.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+        -- Nếu nhấn và thả nhanh (dưới 0.2 giây) thì mở Menu
+        if tick() - startTime < 0.2 then
+            local isOpen = not menu.Visible
+            if isOpen then
+                menu.Visible = true
+                TweenService:Create(menu, TweenInfo.new(0.4, Enum.EasingStyle.Back), {Size = UDim2.new(0, 300, 0, 380)}):Play()
+                TweenService:Create(blur, TweenInfo.new(0.4), {Size = 15}):Play()
+            else
+                TweenService:Create(menu, TweenInfo.new(0.3), {Size = UDim2.new(0, 0, 0, 0)}):Play()
+                TweenService:Create(blur, TweenInfo.new(0.3), {Size = 0}):Play()
+                task.delay(0.3, function() if not isOpen then menu.Visible = false end end)
+            end
         end
     end
 end)
 
-UserInputService.InputEnded:Connect(function(input
+-- LOOP HỆ THỐNG
+table.insert(V12.Conns, RunService.RenderStepped:Connect(function()
+    local char = player.Character
+    if char and char:FindFirstChild("Humanoid") then
+        char.Humanoid.WalkSpeed = State.Speed
+        local root = char:FindFirstChild("HumanoidRootPart")
+        if State.Fly and root and root:FindFirstChild("V_V") then
+            root.V_V.Velocity = char.Humanoid.MoveDirection * 100
+            root.V_G.CFrame = camera.CFrame
+            char.Humanoid.PlatformStand = true
+        elseif not State.Fly and char.Humanoid.PlatformStand then
+            char.Humanoid.PlatformStand = false
+        end
+    end
+end))
